@@ -32,7 +32,7 @@ const LogIn = ({ navigation }) => {
 		(async () => {
 			const token = await AsyncStorage.getItem('token');
 			if (token) {
-				navigation.navigate('MainApp');
+				navigation.replace('MainApp');
 			}
 		})();
 	}, []);
@@ -52,7 +52,7 @@ const LogIn = ({ navigation }) => {
 						type: 'success',
 					});
 					await AsyncStorage.setItem('token', login.data.token);
-					navigation.navigate('MainApp');
+					navigation.replace('MainApp');
 				}
 			} else {
 				throw { message: 'Form required' };

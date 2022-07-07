@@ -6,29 +6,94 @@ import instance from '../../../config/axios';
 import ILLeftArrow from '../../assets/images/left-arrow.svg';
 import ILSearch from '../../assets/images/search.svg';
 
+const RenderingData = ({ data }) => {
+	return (
+		<>
+			{ data && data?.map((el, i) => {
+				let amount = '';
+				const arrAmount = el?.amount?.split('.');
+				if (el?.amount?.length < 10) {
+					let str = '';
+					for (let i = 0; i < 8 - arrAmount[1].length; i++) {
+						str += '0';
+					}
+					amount = `${ arrAmount[0] }.${ str }${ arrAmount[1] }`;
+				} else if (el?.amount?.length > 10) {
+					let str = '';
+					for (let i = 0; i < 8; i++) {
+						str += arrAmount[1][i];
+					}
+					amount = `${ arrAmount[0] }.${ str }`;
+				} else {
+					amount = el?.amount;
+				}
+
+				return (
+					<View
+						key={ i }
+						style={ {
+							flexDirection: 'row',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							paddingTop: 20,
+							paddingBottom: 20,
+							borderBottomColor: 'rgba(255, 255, 255, .15)',
+							borderBottomWidth: 1,
+						} }
+					>
+						<View
+							style={ {
+								flexDirection: 'row',
+								alignItems: 'center',
+							} }
+						>
+							{ el?.image && <Image source={ { uri: el.image } } style={ { width: 16, height: 16 } } /> }
+							<View style={ { width: 8 } } />
+							<Text>{ el?.ticker }</Text>
+						</View>
+						<Text>{ amount }</Text>
+					</View>
+				);
+			}) }
+		</>
+	);
+};
+
 const List = ({ navigation }) => {
 
 	const [search, setSearch] = useState('');
 	const [data, setData] = useState([]);
+	const [filterData, setFilterData] = useState(null);
 
 	useEffect(() => {
 		fetchData();
 	}, []);
-
-	useEffect(() => {
-		if (search.length > 0) {
-			const filterData = data.filter(el => el.ticker.includes(search));
-			setData(filterData);
-		} else {
-			fetchData();
-		}
-	}, [search]);
 
 	const fetchData = async () => {
 		const getData = await instance.get('/list');
 
 		if (getData.data?.status == 'ok') {
 			setData(getData.data?.data);
+		}
+	};
+
+	const onChangeText = (val) => {
+		setSearch(val);
+		if (val) {
+			const filterData = data.filter(el => el.ticker.toLowerCase().includes(val.toLowerCase()));
+			setFilterData(filterData);
+		} else {
+			fetchData();
+			setFilterData(null);
+		}
+	};
+
+	const onSubmitEditing = () => {
+		if (search) {
+			const filterData = data.filter(el => el.ticker.toLowerCase().includes(search.toLowerCase()));
+			setFilterData(filterData);
+		} else {
+			fetchData();
 		}
 	};
 
@@ -65,7 +130,8 @@ const List = ({ navigation }) => {
 						} }
 						placeholder='Search'
 						placeholderTextColor='#EEEE'
-						onChangeText={ val => setSearch(val) }
+						onChangeText={ onChangeText }
+						onSubmitEditing={ onSubmitEditing }
 					/>
 				</View>
 			</View>
@@ -75,52 +141,9 @@ const List = ({ navigation }) => {
 			<ScrollView
 				showsVerticalScrollIndicator={ false }
 			>
-				{ data && data?.map((el, i) => {
-					let amount = '';
-					const arrAmount = el?.amount?.split('.');
-					if (el?.amount?.length < 10) {
-						let str = '';
-						for (let i = 0; i < 8 - arrAmount[1].length; i++) {
-							str += '0';
-						}
-						amount = `${ arrAmount[0] }.${ str }${ arrAmount[1] }`;
-					} else if (el?.amount?.length > 10) {
-						let str = '';
-						for (let i = 0; i < 8; i++) {
-							str += arrAmount[1][i];
-						}
-						amount = `${ arrAmount[0] }.${ str }`;
-					} else {
-						amount = el?.amount;
-					}
-
-					return (
-						<View
-							key={ i }
-							style={ {
-								flexDirection: 'row',
-								alignItems: 'center',
-								justifyContent: 'space-between',
-								paddingTop: 20,
-								paddingBottom: 20,
-								borderBottomColor: 'rgba(255, 255, 255, .15)',
-								borderBottomWidth: 1,
-							} }
-						>
-							<View
-								style={ {
-									flexDirection: 'row',
-									alignItems: 'center',
-								} }
-							>
-								{ el?.image && <Image source={ { uri: el.image } } style={ { width: 16, height: 16 } } /> }
-								<View style={ { width: 8 } } />
-								<Text>{ el?.ticker }</Text>
-							</View>
-							<Text>{ amount }</Text>
-						</View>
-					);
-				}) }
+				<RenderingData
+					data={ filterData ?? data }
+				/>
 			</ScrollView>
 		</LinearGradient>
 	);
